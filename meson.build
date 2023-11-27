@@ -1,9 +1,6 @@
-project(
-  'libpng',
-  'c',
-  version: '1.6.40', license: 'libpng',
-  meson_version: '>=0.50.0',
-)
+project('libpng', 'c', version: '1.6.40', license: 'libpng', meson_version: '>=0.50.0')
+
+pkg = import('pkgconfig')
 
 png_versions = meson.project_version().split('.')
 png_major_version = png_versions[0]
@@ -112,42 +109,31 @@ install_headers(
   subdir: pngincsubdir,
 )
 
-cdata = configuration_data()
-cdata.set('prefix', get_option('prefix'))
-cdata.set('exec_prefix', get_option('prefix'))
-cdata.set('libdir', '${prefix}/' + get_option('libdir'))
-cdata.set('includedir', '${prefix}/' + get_option('includedir'))
-cdata.set('PNGLIB_MAJOR', png_major_version)
-cdata.set('PNGLIB_MINOR', png_minor_version)
-cdata.set('PNGLIB_VERSION', meson.project_version())
-# FIXME: should auto-generate pkg-config file to get this right
-cdata.set('LIBS', '-lz')
-
-configure_file(
-  input: 'libpng.pc.in',
-  output: 'libpng16.pc',
-  configuration: cdata,
-  install_dir: get_option('libdir') / 'pkgconfig',
-  install: true,
-)
-
-# FIXME: this should be a symlink to libpng16.pc
-configure_file(
-  input: 'libpng.pc.in',
-  output: 'libpng.pc',
-  configuration: cdata,
-  install_dir: get_option('libdir') / 'pkgconfig',
-  install: true,
-)
-
 libpng_dep = declare_dependency(
   include_directories: include,
   link_with: libpng,
   dependencies: libpng_deps,
 )
-# Keep the older dependency name for backwards-compat with old-style
-# dependency(..., fallback ['libpng': 'png_dep'])
-png_dep = libpng_dep
 
-png_test = executable('pngtest', 'pngtest.c', dependencies: libpng_dep)
-test('pngtest', png_test, args: files('pngtest.png'))
+pkg.generate(libpng,
+    filebase : 'libpng',
+    name : 'libpng',
+    subdirs : 'lib' + png_libname,
+    version : meson.project_version(),
+    description : 'Loads and saves PNG files',
+    url : 'http://www.libpng.org/pub/png/libpng.html',
+)
+
+pkg.generate(libpng,
+    filebase : 'libpng16',
+    name : 'libpng',
+    subdirs : 'lib' + png_libname,
+    version : meson.project_version(),
+    description : 'Loads and saves PNG files',
+    url : 'http://www.libpng.org/pub/png/libpng.html',
+)
+
+if get_option('tests')
+  png_test = executable('pngtest', 'pngtest.c', dependencies: libpng_dep)
+  test('pngtest', png_test, args: files('pngtest.png'))
+endif
