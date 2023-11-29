@@ -26,10 +26,10 @@ if host_machine.system() == 'windows'
   endif
 endif
 
-libpng_deps = [
-  dependency('zlib'),
-  cc.find_library('m', required: false),
-]
+zlib = dependency('zlib')
+libm = cc.find_library('m', required: false)
+
+libpng_deps = [ zlib, libm ]
 
 png_src = files(
   'png.c',
@@ -115,10 +115,18 @@ libpng_dep = declare_dependency(
   dependencies: libpng_deps,
 )
 
+libpng_pkg_requires = [ ]
+if get_option('default_library') == 'static'
+  libpng_pkg_requires += zlib
+endif
+
 pkg.generate(libpng,
     filebase : 'libpng',
     name : 'libpng',
     subdirs : 'lib' + png_libname,
+    requires : libpng_pkg_requires,
+    libraries : libpng,
+    libraries_private : libpng_deps,
     version : meson.project_version(),
     description : 'Loads and saves PNG files',
     url : 'http://www.libpng.org/pub/png/libpng.html',
@@ -128,6 +136,9 @@ pkg.generate(libpng,
     filebase : 'libpng16',
     name : 'libpng',
     subdirs : 'lib' + png_libname,
+    requires : libpng_pkg_requires,
+    libraries : libpng,
+    libraries_private : libpng_deps,
     version : meson.project_version(),
     description : 'Loads and saves PNG files',
     url : 'http://www.libpng.org/pub/png/libpng.html',
